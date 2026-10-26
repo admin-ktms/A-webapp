@@ -1,11 +1,11 @@
-
 import {
   Navigate,
   Route,
   Routes,
-  Link
+  Link,
 } from "react-router-dom";
 import LoginPage from "../pages/LoginPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
 
 function NotFoundPage() {
   return (
@@ -45,6 +45,11 @@ function AppRoutes() {
       <Route
         path="/login"
         element={<LoginPage />}
+      />
+
+      <Route
+        path="/reset-password"
+        element={<ResetPasswordPage />}
       />
 
       <Route
