@@ -6,7 +6,7 @@ import AdminShell from "../components/layout/AdminShell";
 import DashboardPage from "../pages/DashboardPage";
 import LoginPage from "../pages/LoginPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
-import TournamentsPage from "../pages/TournamentsPage";
+import TournamentsPage from "../pages/TournamentsPages";
 import WorkspacePlaceholderPage from "../pages/WorkspacePlaceholderPage";
 import RequireAdmin from "./RequireAdmin";
 
