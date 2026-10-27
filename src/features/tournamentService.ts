@@ -96,8 +96,17 @@ export async function getTournamentDirectory(
   throwIfError(tournamentResult.error);
   throwIfError(typeResult.error);
 
-  const tournaments = tournamentResult.data ?? [];
+  const tournaments = (tournamentResult.data ?? []) as TournamentRow[];
   const types = (typeResult.data ?? []) as TournamentType[];
+  const registrationCounts = countByTournament(
+    (registrationsResult.data ?? []) as TournamentCountRow[],
+  );
+  const matchdayCounts = countByTournament(
+    (matchdaysResult.data ?? []) as TournamentCountRow[],
+  );
+  const fixtureCounts = countByTournament(
+    (fixturesResult.data ?? []) as TournamentCountRow[],
+  );
 
   if (tournaments.length === 0) {
     return {
