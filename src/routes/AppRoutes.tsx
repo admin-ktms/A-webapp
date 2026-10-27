@@ -6,6 +6,7 @@ import AdminShell from "../components/layout/AdminShell";
 import DashboardPage from "../pages/DashboardPage";
 import LoginPage from "../pages/LoginPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
+import TournamentsPage from "../pages/TournamentsPage";
 import WorkspacePlaceholderPage from "../pages/WorkspacePlaceholderPage";
 import RequireAdmin from "./RequireAdmin";
 
@@ -44,15 +45,7 @@ function AppRoutes() {
       >
         <Route index element={<DashboardPage />} />
 
-        <Route
-          path="tournaments"
-          element={
-            <WorkspacePlaceholderPage
-              title="Tournaments"
-              description="Tournament directory, creation and lifecycle management."
-            />
-          }
-        />
+        <Route path="tournaments" element={<TournamentsPage />} />
 
         <Route
           path="disputes"
