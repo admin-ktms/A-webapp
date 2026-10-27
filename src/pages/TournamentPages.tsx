@@ -227,6 +227,7 @@ function TournamentsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [creationOpen, setCreationOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -260,11 +261,35 @@ function TournamentsPage() {
     void load();
   }, [load]);
 
+  async function handleTournamentCreated(
+    tournament: CreatedTournament,
+  ) {
+    setCreationOpen(false);
+
+    // The directory is newest-first. Clear filters so the new record
+    // cannot be hidden by the previous search or filter selection.
+    setSearch("");
+    setStatusFilter("all");
+    setTypeFilter("all");
+    setExpandedId(tournament.tournament_id);
+
+    if (page !== 0) {
+      // Changing page triggers the directory-loading effect.
+      setPage(0);
+      return;
+    }
+
+    // Already on the first page: reload it immediately.
+    await load(true);
+  }
+
   const statuses = useMemo(
     () =>
-      [...new Set((data?.tournaments ?? []).map(
-        (tournament) => tournament.tournament_status,
-      ))].sort(),
+      [...new Set(
+        (data?.tournaments ?? []).map(
+          (tournament) => tournament.tournament_status,
+        ),
+      )].sort(),
     [data],
   );
 
@@ -310,18 +335,29 @@ function TournamentsPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void load(true)}
-          disabled={loading || refreshing}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-panel px-4 text-sm font-medium hover:border-cyan disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <RefreshCw
-            size={16}
-            className={refreshing ? "animate-spin" : ""}
-          />
-          {refreshing ? "Refreshing…" : "Refresh"}
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => setCreationOpen(true)}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-cyan px-4 text-sm font-semibold text-background hover:opacity-90"
+          >
+            <Plus size={16} />
+            Create tournament
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void load(true)}
+            disabled={loading || refreshing}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-panel px-4 text-sm font-medium hover:border-cyan disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RefreshCw
+              size={16}
+              className={refreshing ? "animate-spin" : ""}
+            />
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -482,6 +518,13 @@ function TournamentsPage() {
         remain automated backend responsibilities. This page is for
         monitoring; it does not manually advance tournament stages.
       </p>
+
+      {creationOpen && (
+        <TournamentCreationForm
+          onClose={() => setCreationOpen(false)}
+          onCreated={handleTournamentCreated}
+        />
+      )}
     </div>
   );
 }
