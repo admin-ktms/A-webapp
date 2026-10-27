@@ -1,10 +1,13 @@
-import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useAdminAuth } from "../auth/AdminAuthContext";
 
 type LoginMode = "password" | "otp" | "reset";
 
 function LoginPage() {
+  const navigate = useNavigate();
+  const { status, reasonCode } = useAdminAuth();
   const [mode, setMode] = useState<LoginMode>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,6 +16,22 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (status === "authorized") {
+      navigate("/admin", { replace: true });
+    } else if (status === "denied") {
+      setErrorMessage(
+        `This account does not have an active KTMS admin identity. Reference: ${
+          reasonCode ?? "ADMIN_ACCESS_DENIED"
+        }`,
+      );
+    } else if (status === "error") {
+      setErrorMessage(
+        "KTMS could not verify your admin identity. Protected access has been blocked.",
+      );
+    }
+  }, [status, reasonCode, navigate]);
 
   function changeMode(nextMode: LoginMode) {
     setMode(nextMode);
@@ -41,8 +60,9 @@ function LoginPage() {
         if (error) throw error;
 
         setMessage(
-          "Supabase authentication succeeded. Administrative identity and role verification are not yet connected."
+          "Authentication succeeded. Verifying KTMS admin identity…"
         );
+        
       } else if (mode === "otp" && !otpSent) {
         const { error } = await supabase.auth.signInWithOtp({
           email: normalizedEmail,
@@ -65,8 +85,9 @@ function LoginPage() {
         if (error) throw error;
 
         setMessage(
-          "Supabase authentication succeeded. Administrative identity and role verification are not yet connected."
+          "Authentication succeeded. Verifying KTMS admin identity…"
         );
+        
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(
           normalizedEmail,
