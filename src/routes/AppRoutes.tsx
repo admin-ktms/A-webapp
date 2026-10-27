@@ -1,11 +1,15 @@
+
 import {
   Navigate,
   Route,
   Routes,
   Link,
 } from "react-router-dom";
+
 import LoginPage from "../pages/LoginPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
+import DashboardPage from "../pages/DashboardPage";
+import RequireAdmin from "./RequireAdmin";
 
 function NotFoundPage() {
   return (
@@ -39,7 +43,16 @@ function AppRoutes() {
     <Routes>
       <Route
         path="/"
-        element={<Navigate to="/login" replace />}
+        element={
+          <RequireAdmin>
+            <DashboardPage />
+          </RequireAdmin>
+        }
+      />
+
+      <Route
+        path="/admin"
+        element={<Navigate to="/" replace />}
       />
 
       <Route
