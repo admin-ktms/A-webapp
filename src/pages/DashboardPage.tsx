@@ -4,7 +4,7 @@ import { AlertCircle, CalendarDays, RefreshCw, Trophy, ClipboardCheck } from "lu
 import {
   getDashboardData,
   type DashboardData,
-} from "../features/dashboard/dashboardService";
+} from "../features/dashboardService";
 
 function formatDate(value: string) {
   if (!value) return "Time unavailable";
