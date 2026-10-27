@@ -1,5 +1,5 @@
 
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 const IN_PROGRESS_STATUSES = [
   "Group Stage",
@@ -37,9 +37,6 @@ type TournamentRow = {
   tournament_status: string | null;
 };
 
-type MatchdayRow = {
-  matchday_id: string;
-};
 
 type SubmissionRow = {
   submission_id: string;
