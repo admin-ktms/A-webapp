@@ -255,13 +255,15 @@ function DashboardPage() {
           </ul>
         )}
 
-        {data && data.resultsNeedingAttention > data.results.length && (
-          <div className="border-t border-border px-5 py-3 text-sm text-muted">
-            Showing {data.results.length} of {data.resultsNeedingAttention}.
-            The full queue will be available in the tournament operations
-            workspace.
-          </div>
-        )}
+        {data &&
+          data.summary.resultsNeedingAttention > data.results.length && (
+            <div className="border-t border-border px-5 py-3 text-sm text-muted">
+              Showing {data.results.length} of{" "}
+              {data.summary.resultsNeedingAttention}.
+              The full queue will be available in the tournament operations
+              workspace.
+            </div>
+          )}
       </section>
 
       <p className="mt-5 text-xs text-muted">
