@@ -9,7 +9,7 @@ export type TournamentType = {
   tournament_type_status: string;
 };
 
-export type TournamentDirectoryItem = {
+type TournamentRow = {
   tournament_id: string;
   tournament_name: string | null;
   tournament_type_id: string;
@@ -21,6 +21,13 @@ export type TournamentDirectoryItem = {
   registration_fee: number | string | null;
   currency: string | null;
   maximum_players: number | null;
+};
+
+type TournamentCountRow = {
+  tournament_id: string | null;
+};
+
+export type TournamentDirectoryItem = TournamentRow & {
   registrationCount: number;
   matchdayCount: number;
   fixtureCount: number;
@@ -39,8 +46,8 @@ function throwIfError(error: { message: string } | null) {
 }
 
 function countByTournament(
-  rows: Array<{ tournament_id: string | null }> | null,
-) {
+  rows: TournamentCountRow[] | null,
+): Map<string, number> {
   const counts = new Map<string, number>();
 
   for (const row of rows ?? []) {
@@ -96,17 +103,9 @@ export async function getTournamentDirectory(
   throwIfError(tournamentResult.error);
   throwIfError(typeResult.error);
 
-  const tournaments = (tournamentResult.data ?? []) as TournamentRow[];
+  const tournaments = (tournamentResult.data ??
+    []) as TournamentRow[];
   const types = (typeResult.data ?? []) as TournamentType[];
-  const registrationCounts = countByTournament(
-    (registrationsResult.data ?? []) as TournamentCountRow[],
-  );
-  const matchdayCounts = countByTournament(
-    (matchdaysResult.data ?? []) as TournamentCountRow[],
-  );
-  const fixtureCounts = countByTournament(
-    (fixturesResult.data ?? []) as TournamentCountRow[],
-  );
 
   if (tournaments.length === 0) {
     return {
@@ -120,41 +119,49 @@ export async function getTournamentDirectory(
     (tournament) => tournament.tournament_id,
   );
 
-  const [registrationsResult, matchdaysResult, fixturesResult] =
-    await Promise.all([
-      supabase
-        .schema("kt")
-        .from("kt_registrations")
-        .select("tournament_id")
-        .in("tournament_id", tournamentIds),
+  const [
+    registrationsResult,
+    matchdaysResult,
+    fixturesResult,
+  ] = await Promise.all([
+    supabase
+      .schema("kt")
+      .from("kt_registrations")
+      .select("tournament_id")
+      .in("tournament_id", tournamentIds),
 
-      supabase
-        .schema("kt")
-        .from("kt_matchdays")
-        .select("tournament_id")
-        .in("tournament_id", tournamentIds),
+    supabase
+      .schema("kt")
+      .from("kt_matchdays")
+      .select("tournament_id")
+      .in("tournament_id", tournamentIds),
 
-      supabase
-        .schema("kt")
-        .from("kt_fixtures")
-        .select("tournament_id")
-        .in("tournament_id", tournamentIds),
-    ]);
+    supabase
+      .schema("kt")
+      .from("kt_fixtures")
+      .select("tournament_id")
+      .in("tournament_id", tournamentIds),
+  ]);
 
   throwIfError(registrationsResult.error);
   throwIfError(matchdaysResult.error);
   throwIfError(fixturesResult.error);
 
   const registrationCounts = countByTournament(
-    registrationsResult.data,
+    (registrationsResult.data ?? []) as TournamentCountRow[],
   );
-  const matchdayCounts = countByTournament(matchdaysResult.data);
-  const fixtureCounts = countByTournament(fixturesResult.data);
+
+  const matchdayCounts = countByTournament(
+    (matchdaysResult.data ?? []) as TournamentCountRow[],
+  );
+
+  const fixtureCounts = countByTournament(
+    (fixturesResult.data ?? []) as TournamentCountRow[],
+  );
 
   return {
     tournaments: tournaments.map((tournament) => ({
       ...tournament,
-      tournament_status: tournament.tournament_status ?? "Unknown",
       registrationCount:
         registrationCounts.get(tournament.tournament_id) ?? 0,
       matchdayCount:
