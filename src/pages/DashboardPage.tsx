@@ -98,7 +98,7 @@ function DashboardPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 text-text sm:px-6 lg:px-8">
+    <div className="px-4 py-6 sm:px-6 lg:px-8">
       <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan">
@@ -271,7 +271,7 @@ function DashboardPage() {
         fixture generation, progression and result verification remain
         backend responsibilities.
       </p>
-    </main>
+    </div>
   );
 }
 
