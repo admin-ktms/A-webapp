@@ -19,7 +19,7 @@ function LoginPage() {
 
   useEffect(() => {
     if (status === "authorized") {
-      navigate("/admin", { replace: true });
+      navigate("/", { replace: true });
     } else if (status === "denied") {
       setErrorMessage(
         `This account does not have an active KTMS admin identity. Reference: ${
