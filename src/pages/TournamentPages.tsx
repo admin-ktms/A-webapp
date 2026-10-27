@@ -16,7 +16,7 @@ import {
   getTournamentDirectory,
   type TournamentDirectoryData,
   type TournamentDirectoryItem,
-} from "../features/tournaments/tournamentService";
+} from "../features/tournamentService";
 
 const PAGE_SIZE = 50;
 
