@@ -73,21 +73,10 @@ export async function getTournamentDirectory(
       .schema("kt")
       .from("kt_tournaments")
       .select(
-        [
-          "tournament_id",
-          "tournament_name",
-          "tournament_type_id",
-          "tournament_status",
-          "registration_open_datetime",
-          "registration_close_datetime",
-          "tournament_start_date",
-          "tournament_end_date",
-          "registration_fee",
-          "currency",
-          "maximum_players",
-        ].join(", "),
+        "tournament_id, tournament_name, tournament_type_id, tournament_status, registration_open_datetime, registration_close_datetime, tournament_start_date, tournament_end_date, registration_fee, currency, maximum_players",
         { count: "exact" },
       )
+
       .order("created_datetime", { ascending: false })
       .range(from, to),
 
