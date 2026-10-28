@@ -5,6 +5,7 @@ import DashboardPage from "../pages/DashboardPage";
 import LoginPage from "../pages/LoginPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import TournamentsPage from "../pages/TournamentPages";
+import PlayersPage from "../pages/PlayersPage";
 import WorkspacePlaceholderPage from "../pages/WorkspacePlaceholderPage";
 import RequireAdmin from "./RequireAdmin";
 
@@ -165,15 +166,7 @@ function AppRoutes() {
           }
         />
 
-        <Route
-          path="players"
-          element={
-            <WorkspacePlaceholderPage
-              title="Players"
-              description="Player records, squads and tournament-related administration."
-            />
-          }
-        />
+        <Route path="players" element={<PlayersPage />} />
 
         <Route
           path="support"
