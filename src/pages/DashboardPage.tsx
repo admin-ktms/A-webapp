@@ -65,14 +65,61 @@ function DashboardPage() {
     }
   }, []);
 
-  useEffect(() => {
-    void loadDashboard();
-
-    // Do not auto-refresh or poll until the first authenticated
-    // Data API read has been verified.
-  }, [loadDashboard]);
-
-  const summary = data?.summary;
+    useEffect(() => {
+      void loadDashboard();
+  
+      // Do not auto-refresh or poll until the first authenticated
+      // Data API read has been verified.
+    }, [loadDashboard]);
+  
+    useEffect(() => {
+      let cancelled = false;
+  
+      async function loadTournamentOptions() {
+        setTournamentsLoading(true);
+  
+        try {
+          const firstPage = await getTournamentDirectory(0);
+          const options = [...firstPage.tournaments];
+  
+          const totalPages = Math.ceil(firstPage.total / 50);
+  
+          for (let page = 1; page < totalPages; page += 1) {
+            const result = await getTournamentDirectory(page);
+            options.push(...result.tournaments);
+          }
+  
+          if (!cancelled) {
+            setTournamentOptions(
+              options.map(({ tournament_id, tournament_name }) => ({
+                tournament_id,
+                tournament_name,
+              })),
+            );
+          }
+        } catch (err: unknown) {
+          if (!cancelled) {
+            setError(
+              err instanceof Error
+                ? err.message
+                : "Unable to load tournament options.",
+            );
+          }
+        } finally {
+          if (!cancelled) {
+            setTournamentsLoading(false);
+          }
+        }
+      }
+  
+      void loadTournamentOptions();
+  
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+  
+    const summary = data?.summary;
 
   const cards = [
     {
