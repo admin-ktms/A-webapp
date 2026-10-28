@@ -1,5 +1,9 @@
 
 import { useCallback, useEffect, useState } from "react";
+import ImageThumbnail from "../components/media/ImageThumbnail";
+import ImageViewer from "../components/media/ImageViewer";
+import type { ImageViewerImage } from "../components/media/imageViewer.types";
+import { getSquadScreenshotUrls } from "../features/squadScreenshotService";
 import {
   AlertCircle,
   ChevronLeft,
@@ -86,7 +90,35 @@ function PlayerDetailsModal({
   const [details, setDetails] = useState<PlayerDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [signedScreenshots, setSignedScreenshots] = useState<
+    Awaited<ReturnType<typeof getSquadScreenshotUrls>>
+  >([]);
+  const [screenshotsLoading, setScreenshotsLoading] = useState(false);
+  const [screenshotsError, setScreenshotsError] = useState<string | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
 
+  const loadScreenshots = useCallback(async () => {
+    setScreenshotsLoading(true);
+    setScreenshotsError(null);
+  
+    try {
+      const result = await getSquadScreenshotUrls(player.player_id);
+  
+      setSignedScreenshots(result);
+    } catch (err: unknown) {
+      setSignedScreenshots([]);
+      setScreenshotsError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load squad screenshots.",
+      );
+    } finally {
+      setScreenshotsLoading(false);
+    }
+  }, [player.player_id]);
+
+  
   useEffect(() => {
     let cancelled = false;
 
@@ -122,22 +154,102 @@ function PlayerDetailsModal({
   }, [player.player_id]);
 
   useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+    let cancelled = false;
+  
+    async function load() {
+      setScreenshotsLoading(true);
+      setScreenshotsError(null);
+  
+      try {
+        const result = await getSquadScreenshotUrls(player.player_id);
+  
+        if (!cancelled) {
+          setSignedScreenshots(result);
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setSignedScreenshots([]);
+          setScreenshotsError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load squad screenshots.",
+          );
+        }
+      } finally {
+        if (!cancelled) setScreenshotsLoading(false);
+      }
     }
+  
+    void load();
+  
+    return () => {
+      cancelled = true;
+    };
+  }, [player.player_id]);
+  
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !viewerOpen) {
+        onClose();
+      }
+    }
+  
     window.addEventListener("keydown", handleKeyDown);
-
+  
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, viewerOpen]);
 
+  
   const profile = details?.player ?? {};
   const squads = details?.squads ?? [];
   const registrations = details?.registrations ?? [];
   const requests = details?.registration_requests ?? [];
-  const restrictions = details?.tournament_type_restrictions ?? [];
+  const restrictions = details?.tournament_type_restrictions ?? [];  
+  const viewerImages: ImageViewerImage[] = signedScreenshots.map(
+    (screenshot, index) => {
+      const metadata = squads
+        .filter(
+          (item): item is Record<string, unknown> =>
+            typeof item === "object" && item !== null,
+        )
+        .flatMap((squad) => {
+          const items = Array.isArray(squad.screenshots)
+            ? squad.screenshots
+            : [];
+  
+          return items.map((item) => ({
+            squadName:
+              typeof squad.squad_name === "string"
+                ? squad.squad_name
+                : "Squad",
+            screenshot:
+              typeof item === "object" && item !== null
+                ? (item as Record<string, unknown>)
+                : {},
+          }));
+        })
+        .find(
+          (item) =>
+            item.screenshot.screenshot_url === screenshot.objectPath,
+        );
+  
+      const slot = metadata?.screenshot.screenshot_slot;
+  
+      const label = metadata
+        ? `${metadata.squadName} — Screenshot ${String(slot ?? index + 1)}`
+        : `Squad screenshot ${index + 1}`;
+  
+      return {
+        src: screenshot.signedUrl,
+        alt: label,
+        label,
+      };
+    },
+  );
+
 
   return (
     <div
@@ -345,16 +457,77 @@ function PlayerDetailsModal({
                   {restrictions.length} restriction record(s)
                 </p>
               </section>
-
+              
               <section className="rounded-lg border border-border bg-background p-4">
-                <h3 className="font-semibold">Screenshot viewer</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Screenshot previews must use short-lived signed URLs from
-                  the private storage endpoint. Raw storage paths are not
-                  rendered as public image URLs. The secure viewer will be
-                  connected after the endpoint is runtime-tested.
-                </p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold">Squad screenshots</h3>
+                    <p className="mt-1 text-sm text-muted">
+                      Private screenshots are loaded through the authorized image service.
+                    </p>
+                  </div>
+              
+                  <button
+                    type="button"
+                    onClick={() => void loadScreenshots()}
+                    disabled={screenshotsLoading}
+                    className="min-h-9 rounded-lg border border-border px-3 text-sm font-medium hover:border-cyan disabled:opacity-50"
+                  >
+                    {screenshotsLoading ? "Loading…" : "Refresh screenshots"}
+                  </button>
+                </div>
+              
+                {screenshotsLoading && signedScreenshots.length === 0 && (
+                  <p className="py-6 text-sm text-muted">
+                    Loading squad screenshots…
+                  </p>
+                )}
+              
+                {screenshotsError && (
+                  <div role="alert" className="mt-4 rounded-lg border border-coral/40 bg-coral/10 p-3">
+                    <p className="break-words text-sm text-coral">
+                      {screenshotsError}
+                    </p>
+                    <p className="mt-2 text-xs text-muted">
+                      Access restrictions are enforced by the backend. If your role
+                      requires tournament context, this screen must be opened with a
+                      valid assigned tournament scope.
+                    </p>
+                  </div>
+                )}
+              
+                {!screenshotsLoading &&
+                  !screenshotsError &&
+                  signedScreenshots.length === 0 && (
+                    <p className="py-6 text-sm text-muted">
+                      No squad screenshots are available for this player.
+                    </p>
+                  )}
+              
+                {viewerImages.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {viewerImages.map((image, index) => (
+                      <ImageThumbnail
+                        key={`${image.src}-${index}`}
+                        image={image}
+                        onClick={() => {
+                          setViewerIndex(index);
+                          setViewerOpen(true);
+                        }}
+                        className="aspect-[4/3] w-full"
+                      />
+                    ))}
+                  </div>
+                )}
+              
+                <ImageViewer
+                  images={viewerImages}
+                  initialIndex={viewerIndex}
+                  isOpen={viewerOpen}
+                  onClose={() => setViewerOpen(false)}
+                />
               </section>
+
             </div>
           )}
         </div>
