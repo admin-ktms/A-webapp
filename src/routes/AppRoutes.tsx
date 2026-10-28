@@ -61,6 +61,66 @@ function AppRoutes() {
         <Route path="tournaments" element={<TournamentsPage />} />
 
         <Route
+          path="registrations"
+          element={
+            <WorkspacePlaceholderPage
+              title="Tournament registrations"
+              description="Registration records for the selected tournament. The registration table and actions are not implemented yet."
+            />
+          }
+        />
+
+        <Route
+          path="matchdays"
+          element={
+            <WorkspacePlaceholderPage
+              title="Matchdays"
+              description="Matchday schedule and status for the selected tournament. The matchday table is not implemented yet."
+            />
+          }
+        />
+
+        <Route
+          path="groups"
+          element={
+            <WorkspacePlaceholderPage
+              title="Tournament groups"
+              description="Group structure for the selected tournament. The group table is not implemented yet."
+            />
+          }
+        />
+
+        <Route
+          path="fixtures"
+          element={
+            <WorkspacePlaceholderPage
+              title="Fixtures"
+              description="Fixtures for the selected tournament. The fixture table and fixture-specific actions are not implemented yet."
+            />
+          }
+        />
+
+        <Route
+          path="standings"
+          element={
+            <WorkspacePlaceholderPage
+              title="Standings"
+              description="Group and overall standings for the selected tournament. The standings tables are not implemented yet."
+            />
+          }
+        />
+
+        <Route
+          path="awards"
+          element={
+            <WorkspacePlaceholderPage
+              title="Tournament awards"
+              description="Awards for the selected tournament. Award records and actions are not implemented yet."
+            />
+          }
+        />
+
+        <Route
           path="tournaments/:tournamentId"
           element={<TournamentOverviewRedirect />}
         />
