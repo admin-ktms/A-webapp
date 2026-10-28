@@ -233,7 +233,34 @@ export async function getTournamentOverview(
         if (error) throw error;
         if (!data) throw new Error("Tournament record not found.");
 
-        return data as TournamentDetails;
+        const record = data as unknown as Record<string, unknown>;
+
+        if (
+          typeof record.tournament_id !== "string" ||
+          !("tournament_name" in record) ||
+          !("tournament_type_id" in record) ||
+          !("tournament_status" in record)
+        ) {
+          throw new Error(
+            "The tournament query returned an unexpected record shape."
+          );
+        }
+        
+        return {
+          tournament_id: record.tournament_id,
+          tournament_name: record.tournament_name as string | null,
+          tournament_type_id: record.tournament_type_id as string | null,
+          tournament_status: record.tournament_status as string | null,
+          registration_open_datetime:
+            record.registration_open_datetime as string | null,
+          registration_close_datetime:
+            record.registration_close_datetime as string | null,
+          registration_fee: record.registration_fee as number | string | null,
+          currency: record.currency as string,
+          maximum_players: record.maximum_players as number | null,
+          tournament_start_date: record.tournament_start_date as string | null,
+          tournament_end_date: record.tournament_end_date as string | null,
+        };
       },
     ),
 
