@@ -1,3 +1,4 @@
+import { Turnstile } from "@marsidev/react-turnstile";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
@@ -16,6 +17,8 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
 
   useEffect(() => {
     if (status === "authorized") {
@@ -43,18 +46,28 @@ function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
+  
+    const normalizedEmail = email.trim().toLowerCase();
+    const requiresCaptcha =
+      mode === "password" ||
+      mode === "reset" ||
+      (mode === "otp" && !otpSent);
+  
+    if (requiresCaptcha && !captchaToken) {
+      setErrorMessage("Complete the CAPTCHA before continuing.");
+      return;
+    }
+  
     setLoading(true);
     setMessage("");
     setErrorMessage("");
-
-    const normalizedEmail = email.trim().toLowerCase();
-
+  
     try {
       if (mode === "password") {
         const { error } = await supabase.auth.signInWithPassword({
           email: normalizedEmail,
           password,
+          options: { captchaToken }
         });
 
         if (error) throw error;
@@ -68,6 +81,7 @@ function LoginPage() {
           email: normalizedEmail,
           options: {
             shouldCreateUser: false,
+            captchaToken,
           },
         });
 
@@ -93,6 +107,7 @@ function LoginPage() {
           normalizedEmail,
           {
             redirectTo: `${window.location.origin}/reset-password`,
+              captchaToken,
           }
         );
 
@@ -110,6 +125,8 @@ function LoginPage() {
       );
     } finally {
       setLoading(false);
+      setCaptchaToken("");
+      setCaptchaResetKey((current) => current + 1);
     }
   }
 
@@ -187,6 +204,28 @@ function LoginPage() {
               className="min-h-12 w-full rounded-lg border border-border bg-background px-4 text-base text-text outline-none placeholder:text-muted focus:border-cyan focus:ring-1 focus:ring-cyan disabled:opacity-60"
             />
           </div>
+
+          {(mode === "password" ||
+            mode === "reset" ||
+            (mode === "otp" && !otpSent)) && (
+            <div className="flex justify-center">
+              <Turnstile
+                key={captchaResetKey}
+                siteKey="0x4AAAAAAFpmu-NVRdoP4C-0"
+                onSuccess={(token) => {
+                  setCaptchaToken(token);
+                  setErrorMessage("");
+                }}
+                onExpire={() => setCaptchaToken("")}
+                onError={() => {
+                  setCaptchaToken("");
+                  setErrorMessage(
+                    "CAPTCHA failed to load. Refresh the page and try again.",
+                  );
+                }}
+              />
+            </div>
+          )}
 
           {mode === "password" && (
             <div>
