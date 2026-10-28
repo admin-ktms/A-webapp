@@ -1,13 +1,10 @@
-
-
-import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
 
 import AdminShell from "../components/layout/AdminShell";
 import DashboardPage from "../pages/DashboardPage";
 import LoginPage from "../pages/LoginPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import TournamentsPage from "../pages/TournamentPages";
-import TournamentOverviewPage from "../pages/TournamentOverviewPage";
 import WorkspacePlaceholderPage from "../pages/WorkspacePlaceholderPage";
 import RequireAdmin from "./RequireAdmin";
 
@@ -33,6 +30,21 @@ function NotFoundPage() {
   );
 }
 
+function TournamentOverviewRedirect() {
+  const { tournamentId } = useParams<{ tournamentId: string }>();
+
+  if (!tournamentId) {
+    return <Navigate to="/tournaments" replace />;
+  }
+
+  return (
+    <Navigate
+      to={`/?tournamentId=${encodeURIComponent(tournamentId)}`}
+      replace
+    />
+  );
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -50,7 +62,7 @@ function AppRoutes() {
 
         <Route
           path="tournaments/:tournamentId"
-          element={<TournamentOverviewPage />}
+          element={<TournamentOverviewRedirect />}
         />
 
         <Route
