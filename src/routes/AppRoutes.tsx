@@ -7,6 +7,7 @@ import DashboardPage from "../pages/DashboardPage";
 import LoginPage from "../pages/LoginPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import TournamentsPage from "../pages/TournamentPages";
+import TournamentOverviewPage from "../pages/TournamentOverviewPage";
 import WorkspacePlaceholderPage from "../pages/WorkspacePlaceholderPage";
 import RequireAdmin from "./RequireAdmin";
 
@@ -46,6 +47,11 @@ function AppRoutes() {
         <Route index element={<DashboardPage />} />
 
         <Route path="tournaments" element={<TournamentsPage />} />
+
+        <Route
+          path="tournaments/:tournamentId"
+          element={<TournamentOverviewPage />}
+        />
 
         <Route
           path="disputes"
