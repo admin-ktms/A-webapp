@@ -64,10 +64,11 @@ function getPageTitle(pathname: string) {
 
 function Brand() {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan/30 bg-cyan/10 text-lg font-black text-cyan">
-        K
-      </div>
+    <img
+      src="/favicon.svg"
+      alt="KTMS"
+      className="h-10 w-10 shrink-0 rounded-xl"
+    />
       <div className="min-w-0">
         <p className="font-bold tracking-wide text-text">KTMS</p>
         <p className="text-xs text-muted">Operations console</p>
