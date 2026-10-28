@@ -1,0 +1,49 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <title>KTMS</title>
+
+  <rect
+    width="256"
+    height="256"
+    rx="42"
+    fill="#080A0F"
+  />
+
+  <!-- Subtle architectural frame -->
+  <path
+    d="M32 76V54H224V76"
+    fill="none"
+    stroke="#2A3342"
+    stroke-width="2"
+  />
+
+  <!-- KTMS wordmark -->
+  <text
+    x="128"
+    y="145"
+    text-anchor="middle"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="51"
+    font-weight="300"
+    letter-spacing="3"
+    fill="#F5F7FA"
+  >KTMS</text>
+
+  <!-- Signature cyan line -->
+  <path
+    d="M47 169H104L119 157H209"
+    fill="none"
+    stroke="#00D9FF"
+    stroke-width="3"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+  />
+
+  <!-- Championship-gold terminal accent -->
+  <path
+    d="M209 157V169"
+    fill="none"
+    stroke="#FFC857"
+    stroke-width="3"
+  />
+</svg>
