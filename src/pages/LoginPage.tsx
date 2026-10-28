@@ -124,12 +124,11 @@ function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10 text-text">
       <section className="w-full max-w-md rounded-2xl border border-border bg-panel p-6 shadow-xl sm:p-8">
         <div className="mb-8 text-center">
-          <div
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-cyan/30 bg-cyan/10 text-2xl font-bold text-cyan"
-            aria-hidden="true"
-          >
-            K
-          </div>
+          <img
+            src="/favicon.svg"
+            alt="KTMS"
+            className="mx-auto h-14 w-14 rounded-xl"
+          />
 
           <h1 className="mt-5 text-2xl font-bold">{heading}</h1>
 
