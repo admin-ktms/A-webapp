@@ -1,294 +1,226 @@
 import type React from "react";
-import { supabase } from "../lib/supabase";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
-export type SectionStatus =
-  | "loading"
-  | "ready"
-  | "denied"
-  | "empty"
-  | "error";
+import {
+  getTournamentOverview,
+  type CountSummary,
+  type OverviewSection,
+  type TournamentDetails,
+  type TournamentOverview,
+} from "../features/tournamentOverviewService";
 
-export type OverviewSection<T> = {
-  status: Exclude<SectionStatus, "loading">;
-  data: T | null;
-  message?: string;
-};
+function SectionCard<T>({
+  title,
+  section,
+  render,
+}: {
+  title: string;
+  section: OverviewSection<T> | undefined;
+  render: (data: T) => React.ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-border bg-panel p-5">
+      <h2 className="text-lg font-semibold">{title}</h2>
 
-export type TournamentOverview = {
-  tournament: OverviewSection<TournamentDetails>;
-  matchdays: OverviewSection<CountSummary>;
-  registrations: OverviewSection<CountSummary>;
-  fixtures: OverviewSection<CountSummary>;
-  results: OverviewSection<CountSummary>;
-  disputes: OverviewSection<CountSummary>;
-};
+      {!section && (
+        <p className="mt-3 text-sm text-muted">No section data available.</p>
+      )}
 
-export type TournamentDetails = {
-  tournament_id: string;
-  tournament_name: string | null;
-  tournament_type_id: string | null;
-  tournament_status: string | null;
-  registration_open_datetime: string | null;
-  registration_close_datetime: string | null;
-  registration_fee: number | string | null;
-  currency: string;
-  maximum_players: number | null;
-  tournament_start_date: string | null;
-  tournament_end_date: string | null;
-};
+      {section?.status === "denied" && (
+        <p className="mt-3 text-sm text-coral">
+          Access denied for this section.
+        </p>
+      )}
 
-export type CountSummary = {
-  count: number;
-};
+      {section?.status === "error" && (
+        <p className="mt-3 text-sm text-coral">
+          Unable to load this section: {section.message}
+        </p>
+      )}
 
-type AuthorizationRow = {
-  is_authorized: boolean;
-  decision_code: string;
-};
+      {section?.status === "empty" && (
+        <p className="mt-3 text-sm text-muted">
+          {section.message ?? "No records found."}
+        </p>
+      )}
 
-const emptyOverviewSection = <T,>(
-  status: "denied" | "error",
-  message: string,
-): OverviewSection<T> => ({
-  status,
-  data: null,
-  message,
-});
-
-function sectionError<T>(error: unknown): OverviewSection<T> {
-  return emptyOverviewSection(
-    "error",
-    error instanceof Error
-      ? error.message
-      : "The backend request failed.",
+      {section?.status === "ready" && section.data !== null && (
+        <div className="mt-3">{render(section.data)}</div>
+      )}
+    </section>
   );
 }
 
-async function hasPermission(
-  permissionCode: string,
-  tournamentId: string,
-): Promise<boolean> {
-  const { data, error } = await supabase
-    .schema("identity")
-    .rpc("evaluate_authorization", {
-      p_permission_code: permissionCode,
-      p_resource_entity: "tournament",
-      p_resource_id: tournamentId,
-      p_target_author_id: null,
-      p_reason: null,
-      p_approval_id: null,
-    });
+function TournamentDetails({ data }: { data: TournamentDetails }) {
+  const fields = [
+    ["Tournament ID", data.tournament_id],
+    ["Type", data.tournament_type_id],
+    ["Status", data.tournament_status],
+    ["Registration opens", data.registration_open_datetime],
+    ["Registration closes", data.registration_close_datetime],
+    ["Registration fee", data.registration_fee == null
+      ? null
+      : `${data.currency} ${data.registration_fee}`],
+    ["Maximum players", data.maximum_players],
+    ["Start date", data.tournament_start_date],
+    ["End date", data.tournament_end_date],
+  ] as const;
 
-  if (error) throw error;
+  return (
+    <div>
+      <h3 className="text-xl font-semibold">
+        {data.tournament_name ?? "Tournament"}
+      </h3>
 
-  const row = (
-    Array.isArray(data) ? data[0] : data
-  ) as AuthorizationRow | null;
-
-  return row?.is_authorized === true;
+      <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+        {fields.map(([label, value]) => (
+          <div key={label}>
+            <dt className="text-sm text-muted">{label}</dt>
+            <dd className="mt-1 break-words text-sm">
+              {value == null || value === "" ? "—" : String(value)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
 }
 
-async function authorizedSection<T>(
-  permissionCode: string,
-  tournamentId: string,
-  load: () => Promise<T>,
-  isEmpty: (data: T) => boolean = () => false,
-): Promise<OverviewSection<T>> {
-  try {
-    const allowed = await hasPermission(
-      permissionCode,
-      tournamentId,
-    );
+function CountDetails({ data }: { data: CountSummary }) {
+  return <p className="text-2xl font-semibold">{data.count}</p>;
+}
 
-    if (!allowed) {
-      return emptyOverviewSection(
-        "denied",
-        "Access denied for this section.",
-      );
+export default function TournamentOverviewPage() {
+  const { tournamentId } = useParams<{ tournamentId: string }>();
+  const [overview, setOverview] = useState<TournamentOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
+
+  const loadOverview = useCallback(async () => {
+    if (!tournamentId) {
+      setPageError("The tournament ID is missing from the URL.");
+      setLoading(false);
+      return;
     }
 
-    const data = await load();
+    setLoading(true);
+    setPageError(null);
 
-    return {
-      status: isEmpty(data) ? "empty" : "ready",
-      data,
-      ...(isEmpty(data) ? { message: "No records found." } : {}),
-    };
-  } catch (error) {
-    return sectionError<T>(error);
+    try {
+      const result = await getTournamentOverview(tournamentId);
+      setOverview(result);
+    } catch (error) {
+      setPageError(
+        error instanceof Error
+          ? error.message
+          : "The tournament overview could not be loaded.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [tournamentId]);
+
+  useEffect(() => {
+    void loadOverview();
+  }, [loadOverview]);
+
+  if (loading) {
+    return (
+      <main className="p-6 text-muted" aria-live="polite">
+        Loading tournament overview…
+      </main>
+    );
   }
-}
 
-async function getCount(
-  table: string,
-  tournamentId: string,
-  column = "tournament_id",
-): Promise<CountSummary> {
-  const { count, error } = await supabase
-    .schema("kt")
-    .from(table)
-    .select(column, { count: "exact", head: true })
-    .eq("tournament_id", tournamentId);
+  if (pageError) {
+    return (
+      <main className="space-y-4 p-6">
+        <div className="flex items-start gap-3 text-coral">
+          <AlertCircle size={20} />
+          <p>{pageError}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void loadOverview()}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4"
+        >
+          <RefreshCw size={16} />
+          Retry
+        </button>
+        <p>
+          <Link to="/tournaments" className="text-cyan hover:underline">
+            Back to tournaments
+          </Link>
+        </p>
+      </main>
+    );
+  }
 
-  if (error) throw error;
+  if (!overview) return null;
 
-  return { count: count ?? 0 };
-}
+  return (
+    <main className="space-y-6 p-4 sm:p-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Link
+            to="/tournaments"
+            className="text-sm text-cyan hover:underline"
+          >
+            ← Tournaments
+          </Link>
+          <h1 className="mt-2 text-2xl font-bold">
+            {overview.tournament.data?.tournament_name ??
+              "Tournament overview"}
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            Tournament ID: {tournamentId}
+          </p>
+        </div>
 
-async function getResultSubmissionCount(
-  tournamentId: string,
-): Promise<CountSummary> {
-  const { data: fixtures, error: fixtureError } = await supabase
-    .schema("kt")
-    .from("kt_fixtures")
-    .select("fixture_id")
-    .eq("tournament_id", tournamentId);
+        <button
+          type="button"
+          onClick={() => void loadOverview()}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4"
+        >
+          <RefreshCw size={16} />
+          Refresh
+        </button>
+      </header>
 
-  if (fixtureError) throw fixtureError;
-
-  const fixtureIds = (fixtures ?? []).map(
-    (fixture) => fixture.fixture_id as string,
+      <div className="grid gap-4 lg:grid-cols-2">
+        <SectionCard
+          title="Tournament details"
+          section={overview.tournament}
+          render={(data) => <TournamentDetails data={data} />}
+        />
+        <SectionCard
+          title="Matchdays"
+          section={overview.matchdays}
+          render={(data) => <CountDetails data={data} />}
+        />
+        <SectionCard
+          title="Registrations"
+          section={overview.registrations}
+          render={(data) => <CountDetails data={data} />}
+        />
+        <SectionCard
+          title="Fixtures"
+          section={overview.fixtures}
+          render={(data) => <CountDetails data={data} />}
+        />
+        <SectionCard
+          title="Results"
+          section={overview.results}
+          render={(data) => <CountDetails data={data} />}
+        />
+        <SectionCard
+          title="Disputes"
+          section={overview.disputes}
+          render={(data) => <CountDetails data={data} />}
+        />
+      </div>
+    </main>
   );
-
-  if (fixtureIds.length === 0) return { count: 0 };
-
-  const { count, error } = await supabase
-    .schema("kt")
-    .from("kt_match_result_submissions")
-    .select("submission_id", { count: "exact", head: true })
-    .in("fixture_id", fixtureIds)
-    .eq("is_current", true);
-
-  if (error) throw error;
-
-  return { count: count ?? 0 };
-}
-
-async function getDisputeCount(
-  tournamentId: string,
-): Promise<CountSummary> {
-  const { data: fixtures, error: fixtureError } = await supabase
-    .schema("kt")
-    .from("kt_fixtures")
-    .select("fixture_id")
-    .eq("tournament_id", tournamentId);
-
-  if (fixtureError) throw fixtureError;
-
-  const fixtureIds = (fixtures ?? []).map(
-    (fixture) => fixture.fixture_id as string,
-  );
-
-  if (fixtureIds.length === 0) return { count: 0 };
-
-  const { count, error } = await supabase
-    .schema("kt")
-    .from("kt_match_result_submissions")
-    .select("submission_id", { count: "exact", head: true })
-    .in("fixture_id", fixtureIds)
-    .eq("is_current", true)
-    .eq("submission_status", "Disputed");
-
-  if (error) throw error;
-
-  return { count: count ?? 0 };
-}
-
-export async function getTournamentOverview(
-  tournamentId: string,
-): Promise<TournamentOverview> {
-  const [
-    tournament,
-    matchdays,
-    registrations,
-    fixtures,
-    results,
-    disputes,
-  ] = await Promise.all([
-    authorizedSection<TournamentDetails>(
-      "tournament.view_internal",
-      tournamentId,
-      async () => {
-        const { data, error } = await supabase
-          .schema("kt")
-          .from("kt_tournaments")
-          .select(
-            [
-              "tournament_id",
-              "tournament_name",
-              "tournament_type_id",
-              "tournament_status",
-              "registration_open_datetime",
-              "registration_close_datetime",
-              "registration_fee",
-              "currency",
-              "maximum_players",
-              "tournament_start_date",
-              "tournament_end_date",
-            ].join(", "),
-          )
-          .eq("tournament_id", tournamentId)
-          .maybeSingle();
-
-        if (error) throw error;
-        if (!data) throw new Error("Tournament record not found.");
-
-        return data as TournamentDetails;
-      },
-    ),
-
-    authorizedSection<CountSummary>(
-      "tournament.view_public",
-      tournamentId,
-      () => getCount("kt_matchdays", tournamentId),
-      (value) => value.count === 0,
-    ),
-
-    authorizedSection<CountSummary>(
-      "registration.view_review",
-      tournamentId,
-      () => getCount("kt_registrations", tournamentId),
-      (value) => value.count === 0,
-    ),
-
-    authorizedSection<CountSummary>(
-      "fixture.view",
-      tournamentId,
-      async () => {
-        const { data, error } = await supabase
-          .schema("kt")
-          .rpc("get_public_fixtures", {
-            p_tournament_id: tournamentId,
-          });
-
-        if (error) throw error;
-
-        return { count: Array.isArray(data) ? data.length : 0 };
-      },
-      (value) => value.count === 0,
-    ),
-
-    authorizedSection<CountSummary>(
-      "match_result.view_published",
-      tournamentId,
-      () => getResultSubmissionCount(tournamentId),
-      (value) => value.count === 0,
-    ),
-
-    authorizedSection<CountSummary>(
-      "match_result.dispute.view",
-      tournamentId,
-      () => getDisputeCount(tournamentId),
-      (value) => value.count === 0,
-    ),
-  ]);
-
-  return {
-    tournament,
-    matchdays,
-    registrations,
-    fixtures,
-    results,
-    disputes,
-  };
 }
