@@ -184,6 +184,57 @@ function DashboardPage() {
         </button>
       </header>
 
+
+            <section className="mb-6 rounded-xl border border-border bg-panel p-5">
+        <label
+          htmlFor="dashboard-tournament"
+          className="block text-sm font-semibold"
+        >
+          Tournament overview
+        </label>
+
+        <p className="mt-1 text-sm text-muted">
+          Select a tournament to view its details and operational summaries.
+          The global totals below remain totals for all visible tournaments.
+        </p>
+
+        <select
+          id="dashboard-tournament"
+          value={selectedTournamentId}
+          disabled={tournamentsLoading}
+          onChange={(event) => {
+            const next = new URLSearchParams(searchParams);
+            const value = event.target.value;
+
+            if (value) {
+              next.set("tournamentId", value);
+            } else {
+              next.delete("tournamentId");
+            }
+
+            setSearchParams(next);
+          }}
+          className="mt-3 min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-cyan sm:max-w-xl"
+        >
+          <option value="">
+            {tournamentsLoading
+              ? "Loading tournaments…"
+              : "All tournaments — global overview"}
+          </option>
+
+          {tournamentOptions.map((tournament) => (
+            <option
+              key={tournament.tournament_id}
+              value={tournament.tournament_id}
+            >
+              {tournament.tournament_name || "Untitled tournament"} —{" "}
+              {tournament.tournament_id}
+            </option>
+          ))}
+        </select>
+      </section>
+      
+      
       {error && (
         <section
           role="alert"
@@ -246,6 +297,15 @@ function DashboardPage() {
         })}
       </section>
 
+      {selectedTournamentId && (
+        <section className="mt-8">
+          <TournamentOverviewPanel
+            key={selectedTournamentId}
+            tournamentId={selectedTournamentId}
+          />
+        </section>
+      )}
+      
       <section className="mt-8 overflow-hidden rounded-xl border border-border bg-panel">
         <div className="flex flex-col gap-1 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
