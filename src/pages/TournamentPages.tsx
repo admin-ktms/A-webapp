@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertCircle,
   CalendarDays,
@@ -165,6 +166,12 @@ function TournamentCard({
           {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           {expanded ? "Hide details" : "View details"}
         </button>
+        <Link
+          to={`/tournaments/${encodeURIComponent(tournament.tournament_id)}`}
+          className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan px-4 text-sm font-semibold text-background hover:opacity-90"
+        >
+          Open tournament overview
+        </Link>
       </div>
 
       {expanded && (
