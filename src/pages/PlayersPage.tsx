@@ -441,7 +441,7 @@ function PlayersPage() {
           </p>
           <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Players</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Global player directory, squad records and KT registration details.
+            Global player directory and squad records.
           </p>
         </div>
 
@@ -563,10 +563,8 @@ function PlayersPage() {
           <thead className="bg-surface text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="px-4 py-3">Player</th>
-              <th className="px-4 py-3">Contact</th>
-              <th className="px-4 py-3">WhatsApp</th>
               <th className="px-4 py-3">Squads</th>
-              <th className="px-4 py-3">KT registrations</th>
+              <th className="px-4 py-3">KT</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Created</th>
               <th className="px-4 py-3 text-right">Details</th>
@@ -576,7 +574,7 @@ function PlayersPage() {
           <tbody>
             {loading && players.length === 0 && !error && (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-muted">
+                <td colSpan={6} className="px-4 py-12 text-center text-muted">
                   Loading player records…
                 </td>
               </tr>
@@ -584,7 +582,7 @@ function PlayersPage() {
 
             {!loading && !error && players.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center">
+                <td colSpan={6} className="px-4 py-12 text-center">
                   <Users size={25} className="mx-auto text-muted" />
                   <p className="mt-3 font-medium">No players found</p>
                   <p className="mt-1 text-sm text-muted">
