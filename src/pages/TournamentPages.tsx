@@ -1,17 +1,11 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertCircle,
-  CalendarDays,
-  ChevronDown,
-  ChevronUp,
   Plus,
   RefreshCw,
   Search,
   Trophy,
-  Users,
-  Swords,
 } from "lucide-react";
 
 import {
