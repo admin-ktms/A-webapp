@@ -2,10 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertCircle,
+  CalendarDays,
+  ChevronDown,
+  ChevronUp,
+  Menu,
+  X,
   Plus,
   RefreshCw,
   Search,
   Trophy,
+  Users,
+  Swords,
 } from "lucide-react";
 
 import {
@@ -92,11 +99,30 @@ function TournamentCard({
   tournament,
   expanded,
   onToggle,
+  menuOpen,
+  onMenuToggle,
 }: {
   tournament: TournamentDirectoryItem;
   expanded: boolean;
   onToggle: () => void;
+  menuOpen: boolean;
+  onMenuToggle: () => void;
 }) {
+  const menuId = `tournament-menu-${encodeURIComponent(
+    tournament.tournament_id,
+  )}`;
+
+  const navigation = [
+    { label: "Registrations", path: "/registrations" },
+    { label: "Matchdays", path: "/matchdays" },
+    { label: "Groups", path: "/groups" },
+    { label: "Fixtures", path: "/fixtures" },
+    { label: "Results", path: "/results" },
+    { label: "Standings", path: "/standings" },
+    { label: "Disputes", path: "/disputes" },
+    { label: "Awards", path: "/awards" },
+  ];
+  
   return (
     <article className="overflow-hidden rounded-xl border border-border bg-panel">
       <div className="p-4 sm:p-5">
@@ -160,12 +186,43 @@ function TournamentCard({
           {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           {expanded ? "Hide details" : "View details"}
         </button>
-        <Link
-          to={`/tournaments/${encodeURIComponent(tournament.tournament_id)}`}
-          className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan px-4 text-sm font-semibold text-background hover:opacity-90"
-        >
-          Open tournament overview
-        </Link>
+        
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={onMenuToggle}
+            aria-label={`Toggle menu for ${
+              tournament.tournament_name || tournament.tournament_id
+            }`}
+            aria-expanded={menuOpen}
+            aria-controls={menuId}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan"
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
+          {menuOpen && (
+            <nav
+              id={menuId}
+              aria-label={`Sections for ${
+                tournament.tournament_name || tournament.tournament_id
+              }`}
+              className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 sm:grid-cols-4"
+            >
+              {navigation.map((item) => (
+                <Link
+                  key={item.path}
+                  to={`${item.path}?tournamentId=${encodeURIComponent(
+                    tournament.tournament_id,
+                  )}`}
+                  className="flex min-h-11 items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-medium hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          )}
+        </div>
       </div>
 
       {expanded && (
@@ -228,6 +285,7 @@ function TournamentsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [creationOpen, setCreationOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -473,6 +531,14 @@ function TournamentsPage() {
               expanded={expandedId === tournament.tournament_id}
               onToggle={() =>
                 setExpandedId((current) =>
+                  current === tournament.tournament_id
+                    ? null
+                    : tournament.tournament_id,
+                )
+              }
+              menuOpen={openMenuId === tournament.tournament_id}
+              onMenuToggle={() =>
+                setOpenMenuId((current) =>
                   current === tournament.tournament_id
                     ? null
                     : tournament.tournament_id,
