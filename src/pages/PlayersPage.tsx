@@ -636,25 +636,38 @@ function PlayersPage() {
         </button>
       </header>
 
+      {/* Players page tabs: directory overview or player operations. */}
       <div className="mb-5 flex flex-wrap gap-2 border-b border-border">
         <button
           type="button"
-          className="border-b-2 border-cyan px-4 py-3 text-sm font-semibold text-cyan"
-          aria-current="page"
+          onClick={() => setActiveTab("overview")}
+          className={`border-b-2 px-4 py-3 text-sm font-semibold ${
+            activeTab === "overview"
+              ? "border-cyan text-cyan"
+              : "border-transparent text-muted hover:text-text"
+          }`}
+          aria-current={activeTab === "overview" ? "page" : undefined}
         >
           View Players
         </button>
+      
         <button
           type="button"
-          disabled
-          title="Player operations will be enabled after their permission mapping is verified."
-          className="cursor-not-allowed border-b-2 border-transparent px-4 py-3 text-sm text-muted opacity-60"
+          onClick={() => setActiveTab("operations")}
+          className={`border-b-2 px-4 py-3 text-sm font-semibold ${
+            activeTab === "operations"
+              ? "border-cyan text-cyan"
+              : "border-transparent text-muted hover:text-text"
+          }`}
+          aria-current={activeTab === "operations" ? "page" : undefined}
         >
           Player Operations
-          <span className="ml-2 text-xs">Coming later</span>
         </button>
       </div>
-
+      
+      {activeTab === "overview" ? (
+        <>
+      
       <section className="mb-5 rounded-xl border border-border bg-panel p-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_190px_190px]">
           <label className="relative block">
@@ -864,6 +877,10 @@ function PlayersPage() {
           player={selectedPlayer}
           onClose={() => setSelectedPlayer(null)}
         />
+      )}
+        </>
+      ) : (
+        <PlayerOperationsPanel />
       )}
     </div>
   );
