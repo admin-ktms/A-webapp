@@ -1,4 +1,6 @@
-
+import { useSearchParams } from "react-router-dom";
+import { getTournamentDirectory } from "../features/tournamentService";
+import TournamentOverviewPanel from "./TournamentOverviewPanel";
 import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, CalendarDays, RefreshCw, Trophy, ClipboardCheck } from "lucide-react";
 import {
@@ -32,7 +34,13 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tournamentOptions, setTournamentOptions] = useState<
+    { tournament_id: string; tournament_name: string | null }[]
+  >([]);
+  const [tournamentsLoading, setTournamentsLoading] = useState(true);
+  
+  const selectedTournamentId = searchParams.get("tournamentId") ?? "";
   const loadDashboard = useCallback(async (manual = false) => {
     if (manual) {
       setRefreshing(true);
