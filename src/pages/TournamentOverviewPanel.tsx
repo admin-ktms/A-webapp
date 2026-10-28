@@ -1,6 +1,5 @@
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
 import {
@@ -92,8 +91,11 @@ function CountDetails({ data }: { data: CountSummary }) {
   return <p className="text-2xl font-semibold">{data.count}</p>;
 }
 
-export default function TournamentOverviewPanel() {
-  const { tournamentId } = useParams<{ tournamentId: string }>();
+export default function TournamentOverviewPanel({
+  tournamentId,
+}: {
+  tournamentId: string;
+}) {
   const [overview, setOverview] = useState<TournamentOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -134,60 +136,50 @@ export default function TournamentOverviewPanel() {
     );
   }
 
-  if (pageError) {
-    return (
-      <main className="space-y-4 p-6">
-        <div className="flex items-start gap-3 text-coral">
-          <AlertCircle size={20} />
-          <p>{pageError}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => void loadOverview()}
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4"
-        >
-          <RefreshCw size={16} />
-          Retry
-        </button>
-        <p>
-          <Link to="/tournaments" className="text-cyan hover:underline">
-            Back to tournaments
-          </Link>
-        </p>
-      </main>
-    );
-  }
+    if (pageError) {
+      return (
+        <section className="space-y-4 rounded-xl border border-coral/40 bg-panel p-5">
+          <div className="flex items-start gap-3 text-coral">
+            <AlertCircle size={20} />
+            <p>{pageError}</p>
+          </div>
+  
+          <button
+            type="button"
+            onClick={() => void loadOverview()}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4"
+          >
+            <RefreshCw size={16} />
+            Retry
+          </button>
+        </section>
+      );
+    }
 
   if (!overview) return null;
 
   return (
     <main className="space-y-6 p-4 sm:p-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Link
-            to="/tournaments"
-            className="text-sm text-cyan hover:underline"
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold">
+              {overview.tournament.data?.tournament_name ??
+                "Selected tournament"}
+            </h2>
+            <p className="mt-1 break-all text-sm text-muted">
+              Tournament ID: {tournamentId}
+            </p>
+          </div>
+  
+          <button
+            type="button"
+            onClick={() => void loadOverview()}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4"
           >
-            ← Tournaments
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold">
-            {overview.tournament.data?.tournament_name ??
-              "Tournament overview"}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Tournament ID: {tournamentId}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => void loadOverview()}
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4"
-        >
-          <RefreshCw size={16} />
-          Refresh
-        </button>
-      </header>
+            <RefreshCw size={16} />
+            Refresh overview
+          </button>
+        </header>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SectionCard
@@ -225,4 +217,3 @@ export default function TournamentOverviewPanel() {
   );
 }
 
-export default TournamentOverviewPanel;
