@@ -592,6 +592,7 @@ function PlayersPage() {
               </tr>
             )}
 
+
             {players.map((player) => (
               <tr
                 key={player.player_id}
@@ -603,14 +604,15 @@ function PlayersPage() {
                     {player.player_id}
                   </p>
                 </td>
-                <td className="px-4 py-3">{player.email_address}</td>
-                <td className="px-4 py-3">{player.whatsapp_number}</td>
+            
                 <td className="px-4 py-3 tabular-nums">
                   {player.squad_count}/3
                 </td>
+            
                 <td className="px-4 py-3 tabular-nums">
                   {player.registration_count}
                 </td>
+            
                 <td className="px-4 py-3">
                   <span
                     className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClasses(player.player_status)}`}
@@ -618,9 +620,11 @@ function PlayersPage() {
                     {player.player_status}
                   </span>
                 </td>
+            
                 <td className="px-4 py-3">
                   {formatDate(player.created_datetime)}
                 </td>
+            
                 <td className="px-4 py-3 text-right">
                   <button
                     type="button"
@@ -634,6 +638,7 @@ function PlayersPage() {
                 </td>
               </tr>
             ))}
+
           </tbody>
         </table>
       </section>
