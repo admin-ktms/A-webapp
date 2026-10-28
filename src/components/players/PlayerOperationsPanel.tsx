@@ -1,112 +1,395 @@
 
-import { supabase } from "../lib/supabase";
+import { useEffect, useState } from "react";
+import {
+  banPlayerAccount,
+  getTournamentTypes,
+  reinstatePlayer,
+  restrictPlayerTournamentType,
+  suspendPlayerAccount,
+  type TournamentType,
+} from "../../features/playerOperationsService";
+import {
+  getPlayerDirectory,
+  type PlayerDirectoryItem,
+} from "../../features/playerService";
 
-export type TournamentType = {
-  tournament_type_id: string;
-  tournament_type_name: string;
-  tournament_type_status: string;
-};
+type Operation =
+  | "suspend-account"
+  | "ban-account"
+  | "reinstate-account"
+  | "suspend-type"
+  | "ban-type"
+  | "reinstate-type";
 
-export type OperationResult = Record<string, unknown>;
+const durations = [
+  { label: "24 hours", value: "24 hours" },
+  { label: "7 days", value: "7 days" },
+  { label: "30 days", value: "30 days" },
+];
 
-function requireResult<T>(data: unknown, error: { message: string } | null): T {
-  if (error) {
-    throw new Error(error.message);
+export default function PlayerOperationsPanel() {
+  const [search, setSearch] = useState("");
+  const [players, setPlayers] = useState<PlayerDirectoryItem[]>([]);
+  const [playerId, setPlayerId] = useState("");
+  const [types, setTypes] = useState<TournamentType[]>([]);
+  const [tournamentTypeId, setTournamentTypeId] = useState("");
+  const [operation, setOperation] = useState<Operation>("suspend-account");
+  const [duration, setDuration] = useState("24 hours");
+  const [reason, setReason] = useState("");
+  const [loadingPlayers, setLoadingPlayers] = useState(false);
+  const [loadingTypes, setLoadingTypes] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [result, setResult] = useState<unknown>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTypes() {
+      setLoadingTypes(true);
+
+      try {
+        const data = await getTournamentTypes();
+        if (!cancelled) {
+          setTypes(data);
+          setTournamentTypeId(data[0]?.tournament_type_id ?? "");
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load tournament types.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingTypes(false);
+      }
+    }
+
+    void loadTypes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function searchPlayers() {
+    setLoadingPlayers(true);
+    setError(null);
+    setMessage(null);
+    setPlayers([]);
+    setPlayerId("");
+
+    try {
+      const data = await getPlayerDirectory({
+        search,
+        page: 0,
+      });
+
+      setPlayers(data.players);
+      if (data.players.length === 1) {
+        setPlayerId(data.players[0].player_id);
+      }
+      if (data.players.length === 0) {
+        setMessage("No matching players found.");
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to search player records.",
+      );
+    } finally {
+      setLoadingPlayers(false);
+    }
   }
 
-  if (data === null || data === undefined) {
-    throw new Error("The operation returned no result.");
+  async function submitOperation(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setMessage(null);
+    setResult(null);
+
+    if (!playerId) {
+      setError("Search for and select a player first.");
+      return;
+    }
+
+    if (!reason.trim()) {
+      setError("Enter a reason for this operation.");
+      return;
+    }
+
+    if (
+      ["suspend-type", "ban-type", "reinstate-type"].includes(operation) &&
+      !tournamentTypeId
+    ) {
+      setError("Select a tournament type.");
+      return;
+    }
+
+    const player = players.find((item) => item.player_id === playerId);
+
+    const operationLabel: Record<Operation, string> = {
+      "suspend-account": "suspend this player's account",
+      "ban-account": "ban this player's account",
+      "reinstate-account": "reinstate this player's account",
+      "suspend-type": "suspend this player in the selected tournament type",
+      "ban-type": "ban this player in the selected tournament type",
+      "reinstate-type": "reinstate this player in the selected tournament type",
+    };
+
+    const confirmed = window.confirm(
+      `Confirm: ${operationLabel[operation]}?\n\nPlayer: ${player?.manager_name ?? playerId}\nReason: ${reason.trim()}`,
+    );
+
+    if (!confirmed) return;
+
+    setSubmitting(true);
+
+    try {
+      let response: unknown;
+
+      switch (operation) {
+        case "suspend-account":
+          response = await suspendPlayerAccount(
+            playerId,
+            duration,
+            reason,
+          );
+          break;
+
+        case "ban-account":
+          response = await banPlayerAccount(playerId, reason);
+          break;
+
+        case "reinstate-account":
+          response = await reinstatePlayer(
+            playerId,
+            "GLOBAL",
+            reason,
+          );
+          break;
+
+        case "suspend-type":
+          response = await restrictPlayerTournamentType(
+            playerId,
+            tournamentTypeId,
+            "Suspended",
+            reason,
+            duration,
+          );
+          break;
+
+        case "ban-type":
+          response = await restrictPlayerTournamentType(
+            playerId,
+            tournamentTypeId,
+            "Banned",
+            reason,
+          );
+          break;
+
+        case "reinstate-type":
+          response = await reinstatePlayer(
+            playerId,
+            "TOURNAMENT_TYPE",
+            reason,
+            tournamentTypeId,
+          );
+          break;
+      }
+
+      setResult(response);
+      setMessage("The backend operation returned successfully.");
+      setReason("");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "The operation failed.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  return data as T;
-}
+  const usesTournamentType = [
+    "suspend-type",
+    "ban-type",
+    "reinstate-type",
+  ].includes(operation);
 
-async function callOperation<T>(
-  functionName: string,
-  args: Record<string, unknown>,
-): Promise<T> {
-  const { data, error } = await supabase
-    .schema("identity")
-    .rpc(functionName, args);
+  const usesDuration = [
+    "suspend-account",
+    "suspend-type",
+  ].includes(operation);
 
-  return requireResult<T>(data, error);
-}
+  return (
+    <section className="space-y-5">
+      <header>
+        <h2 className="text-xl font-bold">Player Operations</h2>
+        <p className="mt-1 text-sm text-muted">
+          Manage account status and tournament-type participation through
+          backend operations.
+        </p>
+      </header>
 
-export async function getTournamentTypes(): Promise<TournamentType[]> {
-  const { data, error } = await supabase
-    .schema("platform")
-    .from("tournament_types")
-    .select(
-      "tournament_type_id, tournament_type_name, tournament_type_status",
-    )
-    .order("tournament_type_name");
+      <section className="rounded-xl border border-border bg-panel p-4">
+        <h3 className="font-semibold">1. Find a player</h3>
 
-  if (error) {
-    throw new Error(error.message);
-  }
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void searchPlayers();
+              }
+            }}
+            placeholder="Name, player ID, email or WhatsApp"
+            className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-cyan"
+          />
 
-  return (data ?? []) as TournamentType[];
-}
+          <button
+            type="button"
+            onClick={() => void searchPlayers()}
+            disabled={loadingPlayers}
+            className="min-h-11 rounded-lg border border-border px-4 text-sm font-semibold hover:border-cyan disabled:opacity-50"
+          >
+            {loadingPlayers ? "Searching…" : "Search"}
+          </button>
+        </div>
 
-export function suspendPlayerAccount(
-  playerId: string,
-  duration: string,
-  reason: string,
-) {
-  return callOperation<OperationResult[]>(
-    "admin_suspend_player_account",
-    {
-      p_target_player_id: playerId,
-      p_duration: duration,
-      p_reason: reason.trim(),
-    },
-  );
-}
+        {players.length > 0 && (
+          <label className="mt-4 block">
+            <span className="mb-2 block text-sm font-medium">
+              Select player
+            </span>
+            <select
+              value={playerId}
+              onChange={(event) => setPlayerId(event.target.value)}
+              className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
+            >
+              <option value="">Choose a player</option>
+              {players.map((player) => (
+                <option key={player.player_id} value={player.player_id}>
+                  {player.manager_name} — {player.player_id} (
+                  {player.player_status})
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </section>
 
-export function banPlayerAccount(playerId: string, reason: string) {
-  return callOperation<OperationResult[]>(
-    "admin_ban_player_account",
-    {
-      p_target_player_id: playerId,
-      p_reason: reason.trim(),
-    },
-  );
-}
+      <form
+        onSubmit={(event) => void submitOperation(event)}
+        className="space-y-4 rounded-xl border border-border bg-panel p-4"
+      >
+        <h3 className="font-semibold">2. Choose operation</h3>
 
-export function reinstatePlayer(
-  playerId: string,
-  scope: "GLOBAL" | "TOURNAMENT_TYPE",
-  reason: string,
-  tournamentTypeId?: string,
-) {
-  return callOperation<OperationResult[]>(
-    "admin_reinstate_player",
-    {
-      p_target_player_id: playerId,
-      p_scope: scope,
-      p_reason: reason.trim(),
-      p_tournament_type_id:
-        scope === "TOURNAMENT_TYPE" ? tournamentTypeId : null,
-    },
-  );
-}
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium">Operation</span>
+          <select
+            value={operation}
+            onChange={(event) => setOperation(event.target.value as Operation)}
+            className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
+          >
+            <option value="suspend-account">Suspend account temporarily</option>
+            <option value="ban-account">Ban account</option>
+            <option value="reinstate-account">Reinstate account</option>
+            <option value="suspend-type">Suspend in a tournament type</option>
+            <option value="ban-type">Ban in a tournament type</option>
+            <option value="reinstate-type">Reinstate in a tournament type</option>
+          </select>
+        </label>
 
-export function restrictPlayerTournamentType(
-  playerId: string,
-  tournamentTypeId: string,
-  restrictionType: "Suspended" | "Banned",
-  reason: string,
-  duration?: string,
-) {
-  return callOperation<OperationResult[]>(
-    "admin_restrict_player_tournament_type",
-    {
-      p_target_player_id: playerId,
-      p_tournament_type_id: tournamentTypeId,
-      p_restriction_type: restrictionType,
-      p_reason: reason.trim(),
-      p_duration:
-        restrictionType === "Suspended" ? duration : null,
-    },
+        {usesTournamentType && (
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium">
+              Tournament type
+            </span>
+            <select
+              value={tournamentTypeId}
+              onChange={(event) => setTournamentTypeId(event.target.value)}
+              disabled={loadingTypes}
+              className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm disabled:opacity-50"
+            >
+              <option value="">
+                {loadingTypes ? "Loading types…" : "Choose a tournament type"}
+              </option>
+              {types.map((type) => (
+                <option
+                  key={type.tournament_type_id}
+                  value={type.tournament_type_id}
+                >
+                  {type.tournament_type_name} — {type.tournament_type_status}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {usesDuration && (
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium">Duration</span>
+            <select
+              value={duration}
+              onChange={(event) => setDuration(event.target.value)}
+              className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
+            >
+              {durations.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium">Reason</span>
+          <textarea
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            required
+            rows={3}
+            maxLength={2000}
+            placeholder="Record the reason for this operation"
+            className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:border-cyan"
+          />
+        </label>
+
+        {error && (
+          <p role="alert" className="break-words text-sm text-coral">
+            {error}
+          </p>
+        )}
+
+        {message && (
+          <p role="status" className="break-words text-sm text-green">
+            {message}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={submitting || loadingTypes}
+          className="min-h-11 rounded-lg bg-cyan px-5 text-sm font-semibold text-background disabled:opacity-50"
+        >
+          {submitting ? "Processing…" : "Confirm operation"}
+        </button>
+
+        {result !== null && (
+          <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-background p-3 text-xs">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        )}
+      </form>
+    </section>
   );
 }
