@@ -62,13 +62,16 @@ function getPageTitle(pathname: string) {
   return matchingItem?.label ?? "Operations";
 }
 
+
 function Brand() {
   return (
-    <img
-      src="/favicon.svg"
-      alt="KTMS"
-      className="h-10 w-10 shrink-0 rounded-xl"
-    />
+    <div className="flex items-center gap-3">
+      <img
+        src="/favicon.svg"
+        alt="KTMS"
+        className="h-10 w-10 shrink-0 rounded-xl"
+      />
+
       <div className="min-w-0">
         <p className="font-bold tracking-wide text-text">KTMS</p>
         <p className="text-xs text-muted">Operations console</p>
@@ -76,6 +79,7 @@ function Brand() {
     </div>
   );
 }
+
 
 function SidebarLink({
   item,
