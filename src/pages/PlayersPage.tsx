@@ -4,6 +4,7 @@ import ImageThumbnail from "../components/media/ImageThumbnail";
 import ImageViewer from "../components/media/ImageViewer";
 import type { ImageViewerImage } from "../components/media/imageViewer.types";
 import { getSquadScreenshotUrls } from "../features/squadScreenshotService";
+import PlayerOperationsPanel from "../components/players/PlayerOperationsPanel";
 import {
   AlertCircle,
   ChevronLeft,
@@ -554,6 +555,9 @@ function PlayersPage() {
   const [page, setPage] = useState(0);
   const [selectedPlayer, setSelectedPlayer] =
     useState<PlayerDirectoryItem | null>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "operations">(
+    "overview",
+  );
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
