@@ -6,6 +6,7 @@ import LoginPage from "../pages/LoginPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import TournamentsPage from "../pages/TournamentPages";
 import PlayersPage from "../pages/PlayersPage";
+import AuditExplorerPage from "../pages/AuditExplorerPage";
 import WorkspacePlaceholderPage from "../pages/WorkspacePlaceholderPage";
 import RequireAdmin from "./RequireAdmin";
 
@@ -190,12 +191,7 @@ function AppRoutes() {
 
         <Route
           path="governance/audit"
-          element={
-            <WorkspacePlaceholderPage
-              title="Audit explorer"
-              description="Read-only inspection of authorized audit records."
-            />
-          }
+          element={<AuditExplorerPage />}
         />
 
         <Route path="admin" element={<Navigate to="/" replace />} />
