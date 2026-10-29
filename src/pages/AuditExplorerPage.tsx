@@ -292,7 +292,7 @@ export default function AuditExplorerPage() {
               className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-cyan focus:ring-1 focus:ring-cyan"
             />
             <span className="mt-1 block text-xs text-muted">
-              Sent to the backend authorization evaluator, not used as an event filter.
+              State your reason for requesting access to Audit Logs.
             </span>
           </label>
 
