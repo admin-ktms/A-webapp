@@ -19,6 +19,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAdminAuth } from "../../auth/AdminAuthContext";
+import AdminNotificationBell from "../notifications/AdminNotificationBell";
 
 type NavigationItem = {
   label: string;
@@ -229,6 +230,8 @@ function AdminShell() {
                   {session?.user.email ?? "Admin session"}
                 </span>
               </div>
+              
+              <AdminNotificationBell />
             </div>
           </header>
 
