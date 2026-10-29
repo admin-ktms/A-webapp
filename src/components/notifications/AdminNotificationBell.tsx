@@ -27,15 +27,16 @@ function formatDate(value: string | null | undefined) {
 }
 
 function isUnread(notification: AdminNotification) {
-  return notification.notification_status?.toLowerCase() !== "read";
+  return notification.read_status === "Unread";
 }
 
 function getTitle(notification: AdminNotification) {
-  return notification.title?.trim() || "Notification";
+  return notification.notification_subject.trim() || "Notification";
 }
 
 function getMessage(notification: AdminNotification) {
-  return notification.message?.trim() || "No message details provided.";
+  return notification.notification_body.trim() ||
+    "No message details provided.";
 }
 
 export default function AdminNotificationBell() {
