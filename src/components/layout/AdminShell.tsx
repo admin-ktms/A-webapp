@@ -213,25 +213,28 @@ function AdminShell() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => void handleSignOut()}
-                disabled={signingOut}
-                aria-label="Sign out"
-                title="Sign out"
-                className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border text-muted hover:border-cyan hover:text-cyan disabled:opacity-50 lg:hidden"
-              >
-                <LogOut size={18} />
-              </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="hidden max-w-64 items-center gap-2 text-sm text-muted lg:flex">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-green" />
+                    <span className="truncate">
+                      {session?.user.email ?? "Admin session"}
+                    </span>
+                  </div>
+                
+                  <AdminNotificationBell />
+                
+                  <button
+                    type="button"
+                    onClick={() => void handleSignOut()}
+                    disabled={signingOut}
+                    aria-label="Sign out"
+                    title="Sign out"
+                    className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border text-muted hover:border-cyan hover:text-cyan disabled:opacity-50 lg:hidden"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                </div>
 
-              <div className="hidden max-w-64 items-center gap-2 text-sm text-muted lg:flex">
-                <span className="h-2 w-2 shrink-0 rounded-full bg-green" />
-                <span className="truncate">
-                  {session?.user.email ?? "Admin session"}
-                </span>
-              </div>
-              
-              <AdminNotificationBell />
             </div>
           </header>
 
