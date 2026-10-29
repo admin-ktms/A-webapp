@@ -5,15 +5,19 @@ export const ADMIN_NOTIFICATION_PAGE_SIZE = 20;
 
 export type AdminNotification = {
   notification_id: string;
+  tournament_id: string | null;
   recipient_type: string;
   recipient_id: string;
-  notification_type: string | null;
-  title: string | null;
-  message: string | null;
-  notification_status: string | null;
+  source_entity: string | null;
+  source_record_id: string | null;
+  notification_type: string;
+  notification_subject: string;
+  notification_body: string;
+  notification_priority: string;
+  delivery_status: string;
+  read_status: string;
   created_datetime: string;
-  read_datetime: string | null;
-  [key: string]: unknown;
+  sent_datetime: string | null;
 };
 
 function throwIfError(error: { message: string } | null) {
