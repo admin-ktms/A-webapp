@@ -302,7 +302,6 @@ function RegistrationDetail({
 
   async function submitDisqualification() {
     const registrationId = registration?.registration_id;
-    const playerId = player.player_id ?? item.player_id;
   
     if (!registrationId) {
       setDisqualificationError(
@@ -321,11 +320,10 @@ function RegistrationDetail({
         player.manager_name,
         item.player_name || item.manager_name || "Unknown player",
       )} from ${valueOf(
-        details.tournament.tournament_name,
+        details?.tournament?.tournament_name,
         "this tournament",
       )}?\n\nReason: ${disqualificationReason.trim()}\n\nThis action may resolve affected fixtures and update tournament standings.`,
     );
-
   
     if (!confirmed) return;
   
