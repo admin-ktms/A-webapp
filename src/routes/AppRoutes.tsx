@@ -9,6 +9,7 @@ import PlayersPage from "../pages/PlayersPage";
 import AuditExplorerPage from "../pages/AuditExplorerPage";
 import WorkspacePlaceholderPage from "../pages/WorkspacePlaceholderPage";
 import RequireAdmin from "./RequireAdmin";
+import RegistrationsPage from "../pages/RegistrationsPage";
 
 function NotFoundPage() {
   return (
@@ -64,12 +65,7 @@ function AppRoutes() {
 
         <Route
           path="registrations"
-          element={
-            <WorkspacePlaceholderPage
-              title="Tournament registrations"
-              description="Registration records for the selected tournament. The registration table and actions are not implemented yet."
-            />
-          }
+           element={<RegistrationsPage />}
         />
 
         <Route
