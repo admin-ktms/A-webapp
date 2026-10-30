@@ -2,6 +2,9 @@
 import { useCallback, useEffect, useState } from "react";
 import ImageThumbnail from "../components/media/ImageThumbnail";
 import ImageViewer from "../components/media/ImageViewer";
+
+import { useSearchParams } from "react-router-dom";
+
 import type { ImageViewerImage } from "../components/media/imageViewer.types";
 import { getSquadScreenshotUrls } from "../features/squadScreenshotService";
 import PlayerOperationsPanel from "../components/players/PlayerOperationsPanel";
@@ -548,6 +551,9 @@ function PlayerDetailsModal({
 }
 
 function PlayersPage() {
+  const [searchParams] = useSearchParams();
+  const initialPlayerId = searchParams.get("playerId")?.trim() ?? "";
+  const initialTab = searchParams.get("tab");
   const [players, setPlayers] = useState<PlayerDirectoryItem[]>([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
@@ -556,7 +562,7 @@ function PlayersPage() {
   const [selectedPlayer, setSelectedPlayer] =
     useState<PlayerDirectoryItem | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "operations">(
-    "overview",
+    initialTab === "operations" ? "operations" : "overview",
   );
 
   const [loading, setLoading] = useState(true);
@@ -880,7 +886,7 @@ function PlayersPage() {
       )}
         </>
       ) : (
-        <PlayerOperationsPanel />
+        <PlayerOperationsPanel initialPlayerId={initialPlayerId} />
       )}
     </div>
   );
