@@ -240,39 +240,48 @@ export async function decideBankTransferPayment(
 }
 
 export async function getRegistrationSquadScreenshots(
-  playerId: string,
   tournamentId: string,
+  registrationReferenceId: string,
 ): Promise<Array<{ signedUrl: string; objectPath: string }>> {
   const { data, error } = await supabase.functions.invoke(
     "view-squad-screenshot",
     {
       body: {
-        player_id: playerId,
+        operation: "registration",
         tournament_id: tournamentId,
+        registration_reference_id: registrationReferenceId,
       },
     },
   );
 
-  if (error) throw new Error("Unable to retrieve squad screenshots.");
+  if (error) {
+    throw new Error("Unable to retrieve registration squad screenshots.");
+  }
 
   const response = asRecord(data);
+
   if (
     !response ||
-    response.player_id !== playerId ||
+    response.registration_reference_id !== registrationReferenceId ||
     !Array.isArray(response.screenshots)
   ) {
-    throw new Error("The squad screenshot service returned an invalid response.");
+    throw new Error(
+      "The registration screenshot service returned an invalid response.",
+    );
   }
 
   return response.screenshots.map((item: unknown) => {
     const screenshot = asRecord(item);
+
     if (
       !screenshot ||
       typeof screenshot.signed_url !== "string" ||
       !screenshot.signed_url.startsWith("https://") ||
       typeof screenshot.object_path !== "string"
     ) {
-      throw new Error("The squad screenshot service returned an invalid image.");
+      throw new Error(
+        "The registration screenshot service returned an invalid image.",
+      );
     }
 
     return {
