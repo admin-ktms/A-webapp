@@ -230,24 +230,21 @@ function RegistrationDetail({
 
       setDetails(result);
 
-      const playerId = result.player?.player_id;
-      if (typeof playerId === "string") {
-        try {
-          const screenshots = await getRegistrationSquadScreenshots(
-            playerId,
-            tournamentId,
-          );
+      try {
+        const screenshots = await getRegistrationSquadScreenshots(
+          tournamentId,
+          item.registration_reference_id,
+        );
 
-          setSquadImages(
-            screenshots.map((screenshot, index) => ({
-              src: screenshot.signedUrl,
-              alt: `Squad screenshot ${index + 1}`,
-              label: `Squad screenshot ${index + 1}`,
-            })),
-          );
-        } catch {
-          setSquadImages([]);
-        }
+        setSquadImages(
+          screenshots.map((screenshot, index) => ({
+            src: screenshot.signedUrl,
+            alt: `Squad screenshot ${index + 1}`,
+            label: `Squad screenshot ${index + 1}`,
+          })),
+        );
+      } catch {
+        setSquadImages([]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load registration.");
