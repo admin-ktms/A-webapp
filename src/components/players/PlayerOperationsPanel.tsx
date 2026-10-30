@@ -27,7 +27,13 @@ const durations = [
   { label: "30 days", value: "30 days" },
 ];
 
-export default function PlayerOperationsPanel() {
+type PlayerOperationsPanelProps = {
+  initialPlayerId?: string;
+};
+
+export default function PlayerOperationsPanel({
+  initialPlayerId = "",
+}: PlayerOperationsPanelProps) {
   const [search, setSearch] = useState("");
   const [players, setPlayers] = useState<PlayerDirectoryItem[]>([]);
   const [playerId, setPlayerId] = useState("");
@@ -74,6 +80,63 @@ export default function PlayerOperationsPanel() {
       cancelled = true;
     };
   }, []);
+
+    useEffect(() => {
+    if (!initialPlayerId) return;
+
+    let cancelled = false;
+
+    async function loadInitialPlayer() {
+      setLoadingPlayers(true);
+      setError(null);
+      setMessage(null);
+
+      try {
+        const data = await getPlayerDirectory({
+          search: initialPlayerId,
+          page: 0,
+        });
+
+        if (cancelled) return;
+
+        const exactPlayer = data.players.find(
+          (player) => player.player_id === initialPlayerId,
+        );
+
+        if (!exactPlayer) {
+          setPlayers([]);
+          setPlayerId("");
+          setError(
+            `Player ${initialPlayerId} could not be found. Search for the player manually.`,
+          );
+          return;
+        }
+
+        setPlayers([exactPlayer]);
+        setPlayerId(exactPlayer.player_id);
+        setSearch(exactPlayer.player_id);
+        setMessage(
+          `${exactPlayer.manager_name} has been selected.`,
+        );
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load the selected player.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingPlayers(false);
+      }
+    }
+
+    void loadInitialPlayer();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialPlayerId]);
 
   async function searchPlayers() {
     setLoadingPlayers(true);
