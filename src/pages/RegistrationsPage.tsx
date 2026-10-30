@@ -317,11 +317,15 @@ function RegistrationDetail({
     }
   
     const confirmed = window.confirm(
-      `Disqualify ${playerName} from ${valueOf(
+      `Disqualify ${valueOf(
+        player.manager_name,
+        item.player_name || item.manager_name || "Unknown player",
+      )} from ${valueOf(
         details.tournament.tournament_name,
         "this tournament",
       )}?\n\nReason: ${disqualificationReason.trim()}\n\nThis action may resolve affected fixtures and update tournament standings.`,
     );
+
   
     if (!confirmed) return;
   
