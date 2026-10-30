@@ -31,6 +31,7 @@ import ImageThumbnail from "../components/media/ImageThumbnail";
 import type { ImageViewerImage } from "../components/media/imageViewer.types";
 import {
   decideBankTransferPayment,
+  disqualifyTournamentPlayer,
   getRegistrationDetails,
   getRegistrationDirectory,
   getRegistrationPaymentProof,
@@ -218,6 +219,11 @@ function RegistrationDetail({
   const [rejectionReason, setRejectionReason] = useState("");
   const [showReject, setShowReject] = useState(false);
 
+  const [disqualificationReason, setDisqualificationReason] = useState("");
+  const [disqualificationBusy, setDisqualificationBusy] = useState(false);
+  const [disqualificationError, setDisqualificationError] = useState("");
+  const [showDisqualification, setShowDisqualification] = useState(false);
+
   const loadDetails = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -260,6 +266,7 @@ function RegistrationDetail({
   const request = details?.registration.request ?? {};
   const registration = details?.registration.official_registration ?? null;
   const player = details?.player ?? {};
+  const navigate = useNavigate();
   const squad = details?.squad.details ?? {};
   const payment = details?.payment;
   const currentTransaction = payment?.current_transaction ?? null;
@@ -293,6 +300,57 @@ function RegistrationDetail({
     }
   }
 
+  async function submitDisqualification() {
+    const registrationId = registration?.registration_id;
+    const playerId = player.player_id ?? item.player_id;
+  
+    if (!registrationId) {
+      setDisqualificationError(
+        "This player does not have an official registration to disqualify.",
+      );
+      return;
+    }
+  
+    if (!disqualificationReason.trim()) {
+      setDisqualificationError("Enter a reason for disqualification.");
+      return;
+    }
+  
+    const confirmed = window.confirm(
+      `Disqualify ${playerName} from ${valueOf(
+        details.tournament.tournament_name,
+        "this tournament",
+      )}?\n\nReason: ${disqualificationReason.trim()}\n\nThis action may resolve affected fixtures and update tournament standings.`,
+    );
+  
+    if (!confirmed) return;
+  
+    setDisqualificationBusy(true);
+    setDisqualificationError("");
+  
+    try {
+      await disqualifyTournamentPlayer(
+        tournamentId,
+        String(registrationId),
+        disqualificationReason,
+      );
+  
+      setDisqualificationReason("");
+      setShowDisqualification(false);
+  
+      await loadDetails();
+      await onChanged();
+    } catch (err) {
+      setDisqualificationError(
+        err instanceof Error
+          ? err.message
+          : "Unable to disqualify this player.",
+      );
+    } finally {
+      setDisqualificationBusy(false);
+    }
+  }
+  
   async function submitDecision(decision: "approve" | "reject") {
     setDecisionBusy(true);
     setDecisionError("");
@@ -433,6 +491,29 @@ function RegistrationDetail({
                 <DetailField label="Player status" value={player.player_status ?? item.player_status} />
                 <DetailField label="Age" value={request.age} />
               </dl>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const playerId = player.player_id ?? item.player_id;
+              
+                    if (!playerId) return;
+              
+                    navigate(
+                      `/players?tab=operations&playerId=${encodeURIComponent(
+                        String(playerId),
+                      )}`,
+                    );
+                  }}
+                  disabled={!player.player_id && !item.player_id}
+                  className="min-h-10 rounded-lg border border-border px-4 text-sm font-semibold hover:border-cyan hover:text-cyan disabled:opacity-50"
+                >
+                  Operations
+                </button>
+                <p className="mt-2 text-xs text-muted">
+                  Use Player Operations for restrictions across a tournament type.
+                </p>
+              </div>
             </Section>
 
             <Section title="Tournament registration">
@@ -758,6 +839,89 @@ function RegistrationDetail({
               </EmptyState>
             )}
           </Section>
+
+          {registration && (
+            <Section title="Tournament disciplinary action">
+              {registration.registration_status === "Disqualified" ? (
+                <p className="text-sm text-muted">
+                  This player is already disqualified from this tournament.
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-muted">
+                    Disqualify this player from the selected tournament. This does not
+                    impose a restriction across the tournament type.
+                  </p>
+          
+                  {!showDisqualification ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDisqualificationError("");
+                        setShowDisqualification(true);
+                      }}
+                      className="mt-4 min-h-11 rounded-lg border border-coral/40 px-4 text-sm font-semibold text-coral hover:bg-coral/10"
+                    >
+                      Disqualify from this tournament
+                    </button>
+                  ) : (
+                    <div className="mt-4 space-y-3">
+                      <label className="block">
+                        <span className="mb-2 block text-sm font-medium">
+                          Disqualification reason (required)
+                        </span>
+                        <textarea
+                          value={disqualificationReason}
+                          onChange={(event) =>
+                            setDisqualificationReason(event.target.value)
+                          }
+                          rows={3}
+                          maxLength={2000}
+                          placeholder="Explain why this player is being disqualified."
+                          className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:border-cyan"
+                        />
+                      </label>
+          
+                      {disqualificationError && (
+                        <p role="alert" className="text-sm text-coral">
+                          {disqualificationError}
+                        </p>
+                      )}
+          
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void submitDisqualification()}
+                          disabled={
+                            disqualificationBusy || !disqualificationReason.trim()
+                          }
+                          className="min-h-11 rounded-lg bg-coral px-4 text-sm font-semibold text-background disabled:opacity-50"
+                        >
+                          {disqualificationBusy
+                            ? "Disqualifying…"
+                            : "Confirm disqualification"}
+                        </button>
+          
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowDisqualification(false);
+                            setDisqualificationReason("");
+                            setDisqualificationError("");
+                          }}
+                          disabled={disqualificationBusy}
+                          className="min-h-11 rounded-lg border border-border px-4 text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </Section>
+          )}
+          
         </div>
       </div>
 
