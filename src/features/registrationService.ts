@@ -239,6 +239,57 @@ export async function decideBankTransferPayment(
   return row as unknown as BankTransferDecision;
 }
 
+export type TournamentDisqualificationResponse = {
+  success: boolean;
+  reason_code?: string;
+  registration_id?: string;
+  registration_status?: string;
+};
+
+export async function disqualifyTournamentPlayer(
+  tournamentId: string,
+  registrationId: string,
+  reason: string,
+): Promise<TournamentDisqualificationResponse> {
+  if (!tournamentId.trim()) {
+    throw new Error("A tournament is required.");
+  }
+
+  if (!registrationId.trim()) {
+    throw new Error("An official registration is required.");
+  }
+
+  if (!reason.trim()) {
+    throw new Error("A disqualification reason is required.");
+  }
+
+  const { data, error } = await supabase
+    .schema("kt")
+    .rpc("admin_disqualify_tournament_player", {
+      p_tournament_id: tournamentId,
+      p_target_registration_id: registrationId,
+      p_reason: reason.trim(),
+    });
+
+  if (error) throw new Error(error.message);
+
+  const row = Array.isArray(data) ? asRecord(data[0]) : asRecord(data);
+
+  if (!row || typeof row.success !== "boolean") {
+    throw new Error(
+      "The disqualification service returned an invalid response.",
+    );
+  }
+
+  if (!row.success) {
+    throw new Error(
+      String(row.reason_code ?? "The disqualification was not completed."),
+    );
+  }
+
+  return row as unknown as TournamentDisqualificationResponse;
+}
+
 export async function getRegistrationSquadScreenshots(
   tournamentId: string,
   registrationReferenceId: string,
