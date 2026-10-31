@@ -9,6 +9,7 @@ import PlayersPage from "../pages/PlayersPage";
 import AuditExplorerPage from "../pages/AuditExplorerPage";
 import WorkspacePlaceholderPage from "../pages/WorkspacePlaceholderPage";
 import RequireAdmin from "./RequireAdmin";
+import MatchdaysPage from "../pages/MatchdaysPage";
 import RegistrationsPage from "../pages/RegistrationsPage";
 
 function NotFoundPage() {
@@ -70,12 +71,7 @@ function AppRoutes() {
 
         <Route
           path="matchdays"
-          element={
-            <WorkspacePlaceholderPage
-              title="Matchdays"
-              description="Matchday schedule and status for the selected tournament. The matchday table is not implemented yet."
-            />
-          }
+          element={<MatchdaysPage />}
         />
 
         <Route
