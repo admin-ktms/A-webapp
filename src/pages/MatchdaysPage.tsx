@@ -8,7 +8,8 @@ import {
   Trophy,
   CheckCircle2,
   CalendarClock,
-} from "lucide-react";
+  type LucidIcon,
+} tyoe "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -57,7 +58,7 @@ function statusStyle(status: string): string {
 function Metric({
   label,
   value,
-  icon: Icon,
+  icon: LucidIcon,
   accent = "text-cyan",
 }: {
   label: string;
