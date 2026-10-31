@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   CalendarClock,
   type LucideIcon,
-} tyoe "lucide-react";
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -58,12 +58,12 @@ function statusStyle(status: string): string {
 function Metric({
   label,
   value,
-  icon: LucideIcon,
+  icon: Icon,
   accent = "text-cyan",
 }: {
   label: string;
   value: number;
-  icon: typeof CalendarDays;
+  icon: LucideIcon;
   accent?: string;
 }) {
   return (
