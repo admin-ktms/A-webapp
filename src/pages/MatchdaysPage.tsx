@@ -8,9 +8,13 @@ import {
   Trophy,
   CheckCircle2,
   CalendarClock,
+  ArrowLeft,
+  Menu,
+  X,
   type LucideIcon,
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+
+import { Link, useSearchParams } from "react-router-dom";
 
 import {
   getTournamentMatchdays,
@@ -195,9 +199,19 @@ function MatchdayCard({
   );
 }
 
+const TOURNAMENT_NAVIGATION = [
+  { label: "Registrations", path: "/registrations" },
+  { label: "Groups", path: "/groups" },
+  { label: "Fixtures", path: "/fixtures" },
+  { label: "Results", path: "/results" },
+  { label: "Standings", path: "/standings" },
+  { label: "Disputes", path: "/disputes" },
+  { label: "Awards", path: "/awards" },
+];
+
 export default function MatchdaysPage() {
   const [searchParams] = useSearchParams();
-
+  const [navigationOpen, setNavigationOpen] = useState(false);
   const tournamentId = searchParams.get("tournamentId") ?? "";
 
   const [matchdays, setMatchdays] = useState<MatchdayItem[]>([]);
@@ -239,92 +253,108 @@ export default function MatchdaysPage() {
     <main className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
 
       {/* Page header */}
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan">
-            Tournament operations
-          </p>
-
-          <h2 className="mt-2 text-2xl font-bold">
-            Matchdays
-          </h2>
-
-          <p className="mt-2 break-all text-sm text-muted">
-            Tournament ID: {tournamentId || "Not selected"}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => void loadMatchdays()}
-          disabled={loading}
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:bg-surface disabled:opacity-50"
-        >
-          <RefreshCw
-            size={16}
-            className={loading ? "animate-spin" : ""}
-          />
-          Refresh
-        </button>
-      </header>
-
-      {/* Loading */}
-      {loading && (
-        <div
-          className="rounded-xl border border-border bg-panel p-8 text-center text-sm text-muted"
-          aria-live="polite"
-        >
-          Loading tournament matchdays…
-        </div>
-      )}
-
-      {/* Error */}
-      {!loading && error && (
-        <section className="rounded-xl border border-coral/30 bg-panel p-5">
-          <div className="flex items-start gap-3 text-coral">
-            <AlertCircle size={20} />
-
-            <div>
-              <h3 className="font-semibold">
-                Unable to load matchdays
-              </h3>
-
-              <p className="mt-1 text-sm">
-                {error}
+      <header className="space-y-4">
+      
+        <div className="flex flex-wrap items-start justify-between gap-4">
+      
+          <div className="flex min-w-0 items-start gap-3">
+      
+            {/* Back to tournament directory */}
+            <Link
+              to="/tournaments"
+              className="mt-1 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border border-border hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan"
+              aria-label="Back to tournaments"
+              title="Back to tournaments"
+            >
+              <ArrowLeft size={19} />
+            </Link>
+      
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan">
+                Tournament operations
+              </p>
+      
+              <h2 className="mt-2 text-2xl font-bold">
+                Matchdays
+              </h2>
+      
+              <p className="mt-2 break-all text-sm text-muted">
+                Tournament ID: {tournamentId || "Not selected"}
               </p>
             </div>
+      
           </div>
-
-          <button
-            type="button"
-            onClick={() => void loadMatchdays()}
-            className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm"
+      
+          <div className="flex shrink-0 items-center gap-2">
+      
+            {/* Tournament section navigation */}
+            <button
+              type="button"
+              onClick={() => setNavigationOpen((open) => !open)}
+              aria-label={
+                navigationOpen
+                  ? "Close tournament navigation"
+                  : "Open tournament navigation"
+              }
+              aria-expanded={navigationOpen}
+              aria-controls="matchdays-tournament-navigation"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border hover:border-cyan hover:text-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan"
+            >
+              {navigationOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+      
+            {/* Refresh */}
+            <button
+              type="button"
+              onClick={() => void loadMatchdays()}
+              disabled={loading}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:bg-surface disabled:opacity-50"
+            >
+              <RefreshCw
+                size={16}
+                className={loading ? "animate-spin" : ""}
+              />
+              Refresh
+            </button>
+      
+          </div>
+      
+        </div>
+      
+        {/* Collapsible tournament navigation */}
+        {navigationOpen && (
+          <nav
+            id="matchdays-tournament-navigation"
+            aria-label="Tournament sections"
+            className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-panel p-3 sm:grid-cols-4"
           >
-            <RefreshCw size={15} />
-            Try again
-          </button>
-        </section>
-      )}
+            {TOURNAMENT_NAVIGATION.map((item) => (
+              <Link
+                key={item.path}
+                to={`${item.path}?tournamentId=${encodeURIComponent(
+                  tournamentId,
+                )}`}
+                onClick={() => setNavigationOpen(false)}
+                aria-current={
+                  item.path === "/matchdays" ? "page" : undefined
+                }
+                className={[
+                  "flex min-h-11 items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan",
+                  item.path === "/matchdays"
+                    ? "border-cyan/30 bg-cyan/10 text-cyan"
+                    : "border-border hover:border-cyan hover:text-cyan",
+                ].join(" ")}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+      
+      </header>
 
-      {/* Empty */}
-      {!loading && !error && matchdays.length === 0 && (
-        <section className="rounded-xl border border-dashed border-border bg-panel p-10 text-center">
-          <CalendarDays
-            size={30}
-            className="mx-auto text-muted"
-          />
-
-          <h3 className="mt-4 font-semibold">
-            No matchdays found
-          </h3>
-
-          <p className="mt-2 text-sm text-muted">
-            No matchday records are currently associated
-            with this tournament.
-          </p>
-        </section>
-      )}
-
+      
       {/* Matchday cards */}
       {!loading && !error && matchdays.length > 0 && (
         <>
